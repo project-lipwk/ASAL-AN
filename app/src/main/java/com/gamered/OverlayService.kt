@@ -2,11 +2,16 @@ package com.gamered
 
 import android.app.*
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
-import android.view.*
-import android.widget.*
+import android.view.Gravity
+import android.view.View
+import android.view.WindowManager
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
 
 class OverlayService : Service() {
     private lateinit var wm: WindowManager
@@ -23,12 +28,16 @@ class OverlayService : Service() {
 
     private fun notif(): Notification {
         val ch = "gamered"
-        if (Build.VERSION.SDK_INT >= 26)
-            getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(NotificationChannel(ch, "Game Red", NotificationManager.IMPORTANCE_LOW))
+        if (Build.VERSION.SDK_INT >= 26) {
+            val nm = getSystemService(NotificationManager::class.java)
+            val channel = NotificationChannel(ch, "Game Red", NotificationManager.IMPORTANCE_LOW)
+            nm.createNotificationChannel(channel)
+        }
         return Notification.Builder(this, ch)
-            .setContentTitle("Game Red").setContentText("aktif")
-            .setSmallIcon(android.R.drawable.ic_menu_manage).build()
+            .setContentTitle("Game Red")
+            .setContentText("aktif")
+            .setSmallIcon(android.R.drawable.ic_menu_manage)
+            .build()
     }
 
     private fun build() {
@@ -38,25 +47,26 @@ class OverlayService : Service() {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
-        ).apply { gravity = Gravity.TOP or Gravity.START; x = 30; y = 100 }
+        )
+        lp.gravity = Gravity.TOP or Gravity.START
+        lp.x = 30
+        lp.y = 100
 
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(0xCC000000.toInt())
-            setPadding(24, 24, 24, 24)
-        }
+        val root = LinearLayout(this)
+        root.orientation = LinearLayout.VERTICAL
+        root.setBackgroundColor(Color.parseColor("#CC000000"))
+        root.setPadding(24, 24, 24, 24)
 
-        val tv = TextView(this).apply {
-            text = "GAME RED OVERLAY"
-            setTextColor(0xFFFF5252.toInt())
-            textSize = 16f
-        }
+        val tv = TextView(this)
+        tv.text = "GAME RED OVERLAY"
+        tv.setTextColor(Color.parseColor("#FF5252"))
+        tv.textSize = 16f
         root.addView(tv)
 
-        root.addView(Button(this).apply {
-            text = "X"
-            setOnClickListener { stopSelf() }
-        })
+        val btn = Button(this)
+        btn.text = "X"
+        btn.setOnClickListener { stopSelf() }
+        root.addView(btn)
 
         v = root
         wm.addView(root, lp)
@@ -64,6 +74,6 @@ class OverlayService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        v?.let { wm.removeView(it) }
+        if (v != null) wm.removeView(v)
     }
 }
